@@ -136,7 +136,7 @@ export function register() {
     Object.defineProperty(Subject.prototype, 'next', {
       get() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return function wrappedAsObservable(this: any, ...args: any) {
+        return function wrappedNext(this: any, ...args: any) {
           const result = next.apply(this, args);
           const debugInfo = getDebugInfo(this);
           const chainedDebugInfo = chainDebugInfo(debugInfo, 'next');
