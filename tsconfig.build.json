@@ -1,9 +1,7 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": [
-    "src/**/__fixtures__/**/*",
-    "src/internal/",
-    "src/**/*.test.*",
-    "src/setupJest.ts"
-  ]
+  "compilerOptions": {
+    "declaration": true
+  },
+  "exclude": ["src/**/__fixtures__/**/*", "src/**/*.test.*", "src/setupJest.ts"]
 }
