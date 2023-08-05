@@ -1,99 +1,66 @@
 import { Observable, Subject, combineLatest } from 'rxjs';
-
-type TrackingId = string;
-
-type DebugInfo = {
-  name: string;
-  trackingId: TrackingId;
-};
-type DebugParams = Pick<DebugInfo, 'name'>;
+import { triggerDebugEvent, DebugEventName } from './DebugEvent';
+import {
+  TrackingParams,
+  createTracking,
+  getTracking,
+  attachTracking,
+  Tracking,
+  generateTrackingId,
+} from './Tracking';
 
 type CombineLatest = typeof combineLatest;
 
-const RxEvent = {
-  Next: 'Next',
-  Pipe: 'Pipe',
-  AsObservable: 'AsObservable',
-  ObservableCreator: 'ObservableCreator',
-} as const;
-type RxEvent = (typeof RxEvent)[keyof typeof RxEvent];
-
-let count = 0;
-export function generateTrackingId(): string {
-  count += 1;
-  return 'tr-' + count;
-}
-
-const DEBUG_INFO = Symbol('DebugInfo');
-
 const UNKNOWN_NAME = 'unknown';
 
-function triggerEvent(event: RxEvent, debugInfo: DebugInfo | undefined): void {
-  console.log(event, debugInfo);
-}
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-function attachDebugInfo(o: Function | object, debugInfo: DebugInfo): void {
-  if (!Object.hasOwn(o, DEBUG_INFO)) {
-    Object.assign(o, { [DEBUG_INFO]: debugInfo });
+export function wrapObservableCreatorPipe(tracking: Tracking): () => void {
+  function wrapped() {
+    triggerDebugEvent(DebugEventName.ObservableCreatorPipe, tracking);
   }
-}
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-function getDebugInfo(fn: Function): DebugInfo | undefined {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (fn as any)[DEBUG_INFO] ?? undefined;
-}
-
-function createDebugInfo(debugParams: DebugParams): DebugInfo {
-  const debugInfo: DebugInfo = {
-    ...debugParams,
-    trackingId: generateTrackingId(),
-  };
-  return debugInfo;
+  return wrapped;
 }
 
 export function wrapObservableCreator<T extends CombineLatest>(
   combineLatest: T,
-  debugParams: DebugParams,
+  params: TrackingParams,
 ): T {
-  const debugInfo = createDebugInfo(debugParams);
+  const tracking = createTracking(params);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function wrapped(this: any, ...args: any) {
     if (Array.isArray(args) && args.length === 1 && Array.isArray(args[0])) {
-      const xs = args[0].map((v) => getDebugInfo(v)?.name ?? UNKNOWN_NAME);
-      const chainedDebugInfo = chainDebugInfo(
-        debugInfo,
+      const xs = args[0].map((v) => getTracking(v)?.label ?? UNKNOWN_NAME);
+      const chainedTracking = chainTracking(
+        tracking,
         `combineLatest(${xs.join(',')})`,
       );
-      triggerEvent(RxEvent.ObservableCreator, chainedDebugInfo);
+      triggerDebugEvent(DebugEventName.ObservableCreator, chainedTracking);
     } else {
-      triggerEvent(RxEvent.ObservableCreator, debugInfo);
+      triggerDebugEvent(DebugEventName.ObservableCreator, tracking);
     }
     return combineLatest.apply(this, args);
   }
-  attachDebugInfo(wrapped, debugInfo);
+  attachTracking(wrapped, tracking);
   return wrapped as T;
 }
 
 export function wrapSubject<T = unknown>(
   subject: Subject<T>,
-  debugParams: DebugParams,
+  params: TrackingParams,
 ): Subject<T> {
-  const debugInfo = createDebugInfo(debugParams);
-  attachDebugInfo(subject, debugInfo);
+  const tracking = createTracking(params);
+  attachTracking(subject, tracking);
   return subject;
 }
 
-function chainDebugInfo(
-  debugInfo: DebugInfo | undefined,
-  name: string,
-): DebugInfo {
-  const chainedDebugInfo: DebugInfo = {
-    name: debugInfo?.name ? debugInfo.name + '.' + name : name,
-    trackingId: debugInfo?.trackingId ?? generateTrackingId(),
+function chainTracking(
+  tracking: Tracking | undefined,
+  label: string,
+): Tracking {
+  const chainedTracking: Tracking = {
+    label: tracking?.label ? tracking.label + '.' + label : label,
+    id: tracking?.id ?? generateTrackingId(),
   };
-  return chainedDebugInfo;
+  return chainedTracking;
 }
 
 export function register() {
@@ -104,10 +71,10 @@ export function register() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return function wrappedPipe(this: any, ...args: any) {
           const result = pipe.apply(this, args);
-          const debugInfo = getDebugInfo(this);
-          const chainedDebugInfo = chainDebugInfo(debugInfo, 'pipe');
-          attachDebugInfo(result, chainedDebugInfo);
-          triggerEvent(RxEvent.Pipe, chainedDebugInfo);
+          const tracking = getTracking(this);
+          const chainedTracking = chainTracking(tracking, 'pipe');
+          attachTracking(result, chainedTracking);
+          triggerDebugEvent(DebugEventName.Pipe, chainedTracking);
           return result;
         };
       },
@@ -121,10 +88,10 @@ export function register() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return function wrappedAsObservable(this: any, ...args: any) {
           const result = asObservable.apply(this, args);
-          const debugInfo = getDebugInfo(this);
-          const chainedDebugInfo = chainDebugInfo(debugInfo, 'asObservable');
-          attachDebugInfo(result, chainedDebugInfo);
-          triggerEvent(RxEvent.AsObservable, chainedDebugInfo);
+          const tracking = getTracking(this);
+          const chainedTracking = chainTracking(tracking, 'asObservable');
+          attachTracking(result, chainedTracking);
+          triggerDebugEvent(DebugEventName.AsObservable, chainedTracking);
           return result;
         };
       },
@@ -136,11 +103,11 @@ export function register() {
     Object.defineProperty(Subject.prototype, 'next', {
       get() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return function wrappedAsObservable(this: any, ...args: any) {
+        return function wrappedNext(this: any, ...args: any) {
           const result = next.apply(this, args);
-          const debugInfo = getDebugInfo(this);
-          const chainedDebugInfo = chainDebugInfo(debugInfo, 'next');
-          triggerEvent(RxEvent.Next, chainedDebugInfo);
+          const tracking = getTracking(this);
+          const chainedTracking = chainTracking(tracking, 'next');
+          triggerDebugEvent(DebugEventName.Next, chainedTracking);
           return result;
         };
       },

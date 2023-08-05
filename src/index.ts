@@ -5,15 +5,22 @@ const SUBJECT_LIST = ['Subject', 'BehaviorSubject'];
 const OBSERVABLE_CREATOR_LIST = ['combineLatest', 'buffer'];
 
 const buildWrapSubject = template.expression(`
-__rxjsDebugRuntime.wrapSubject(TARGET, { name: NAME })
+__rxjsDebugRuntime.wrapSubject(TARGET, { label: LABEL })
 `);
 
 const buildWrapObservableCreator = template.expression(`
-__rxjsDebugRuntime.wrapObservableCreator(combineLatest, { name: NAME })
+__rxjsDebugRuntime
+  .wrapObservableCreator(TARGET, { label: LABEL })(ARGS)
+  .pipe(
+    __rxjsDebugOperators.tap(
+      __rxjsDebugRuntime.wrapObservableCreatorPipe({ label: LABEL }),
+    ),
+  )
 `);
 
-const runtimeSnippet = template.statement(`
+const runtimeSnippets = template.statements(`
 const __rxjsDebugRuntime = require('babel-plugin-rxjs-debug/lib/runtime');
+const __rxjsDebugOperators = require('rxjs/operators');
 `)();
 
 class ChangeFlag {
@@ -67,12 +74,41 @@ const visitor: Visitor<State> = {
     }
     const target = path.node.init;
 
-    const combinedName = [...state.nameStack, variableName].join('.');
+    const label = [...state.nameStack, variableName].join('.');
     const replaced = buildWrapSubject({
       TARGET: target,
-      NAME: t.stringLiteral(combinedName),
+      LABEL: t.stringLiteral(label),
     });
     path.node.init = replaced;
+    state.changeFlag.mark();
+  },
+  // this.subject = new Subject();
+  AssignmentExpression(path, state) {
+    const t = state.types;
+    if (
+      !t.isMemberExpression(path.node.left) ||
+      !t.isIdentifier(path.node.left.property)
+    ) {
+      return;
+    }
+    const memberName = path.node.left.property.name;
+
+    if (
+      !path.node.right ||
+      !t.isNewExpression(path.node.right) ||
+      !t.isIdentifier(path.node.right.callee) ||
+      !SUBJECT_LIST.includes(path.node.right.callee.name)
+    ) {
+      return;
+    }
+    const target = path.node.right;
+
+    const label = [...state.nameStack, memberName].join('.');
+    const replaced = buildWrapSubject({
+      TARGET: target,
+      LABEL: t.stringLiteral(label),
+    });
+    path.node.right = replaced;
     state.changeFlag.mark();
   },
   // combineLatest([observable])
@@ -86,11 +122,13 @@ const visitor: Visitor<State> = {
       return;
     }
 
-    const combinedName = [...state.nameStack, observableCreatorName].join('.');
+    const label = [...state.nameStack, observableCreatorName].join('.');
     const replaced = buildWrapObservableCreator({
-      NAME: t.stringLiteral(combinedName),
+      TARGET: t.identifier(observableCreatorName),
+      LABEL: t.stringLiteral(label),
+      ARGS: path.node.arguments,
     });
-    path.node.callee = replaced;
+    path.replaceInline(replaced);
     state.changeFlag.mark();
   },
 };
@@ -103,7 +141,7 @@ export default ({ types: t }: { types: typeof types }): PluginObj => ({
       path.traverse(visitor, { changeFlag, nameStack: [], types: t });
 
       if (changeFlag.changed) {
-        path.node.body.unshift(runtimeSnippet);
+        path.node.body = [...runtimeSnippets, ...path.node.body];
       }
     },
   },
