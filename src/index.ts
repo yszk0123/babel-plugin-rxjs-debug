@@ -75,6 +75,35 @@ const visitor: Visitor<State> = {
     path.node.init = replaced;
     state.changeFlag.mark();
   },
+  // this.subject = new Subject();
+  AssignmentExpression(path, state) {
+    const t = state.types;
+    if (
+      !t.isMemberExpression(path.node.left) ||
+      !t.isIdentifier(path.node.left.property)
+    ) {
+      return;
+    }
+    const memberName = path.node.left.property.name;
+
+    if (
+      !path.node.right ||
+      !t.isNewExpression(path.node.right) ||
+      !t.isIdentifier(path.node.right.callee) ||
+      !SUBJECT_LIST.includes(path.node.right.callee.name)
+    ) {
+      return;
+    }
+    const target = path.node.right;
+
+    const label = [...state.nameStack, memberName].join('.');
+    const replaced = buildWrapSubject({
+      TARGET: target,
+      LABEL: t.stringLiteral(label),
+    });
+    path.node.right = replaced;
+    state.changeFlag.mark();
+  },
   // combineLatest([observable])
   CallExpression(path, state) {
     const t = state.types;

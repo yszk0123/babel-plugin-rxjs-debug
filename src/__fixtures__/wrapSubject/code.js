@@ -7,6 +7,10 @@ function foo() {
 }
 
 class Foo {
+  constructor() {
+    this.subject$ = new Subject();
+  }
+
   bar() {
     const subject = new Subject();
   }

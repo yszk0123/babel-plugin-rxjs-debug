@@ -12,6 +12,11 @@ function foo() {
   });
 }
 class Foo {
+  constructor() {
+    this.subject$ = __rxjsDebugRuntime.wrapSubject(new Subject(), {
+      label: 'Foo.constructor.subject$',
+    });
+  }
   bar() {
     const subject = __rxjsDebugRuntime.wrapSubject(new Subject(), {
       label: 'Foo.bar.subject',
