@@ -1,22 +1,15 @@
 import { Observable, Subject, combineLatest } from 'rxjs';
+import { triggerDebugEvent, DebugEventName } from './DebugEvent';
 
 type TrackingId = string;
 
-type DebugInfo = {
+export type DebugInfo = {
   name: string;
   trackingId: TrackingId;
 };
 type DebugParams = Pick<DebugInfo, 'name'>;
 
 type CombineLatest = typeof combineLatest;
-
-const RxEvent = {
-  Next: 'Next',
-  Pipe: 'Pipe',
-  AsObservable: 'AsObservable',
-  ObservableCreator: 'ObservableCreator',
-} as const;
-type RxEvent = (typeof RxEvent)[keyof typeof RxEvent];
 
 let count = 0;
 export function generateTrackingId(): string {
@@ -27,10 +20,6 @@ export function generateTrackingId(): string {
 const DEBUG_INFO = Symbol('DebugInfo');
 
 const UNKNOWN_NAME = 'unknown';
-
-function triggerEvent(event: RxEvent, debugInfo: DebugInfo | undefined): void {
-  console.log(event, debugInfo);
-}
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 function attachDebugInfo(o: Function | object, debugInfo: DebugInfo): void {
@@ -66,9 +55,9 @@ export function wrapObservableCreator<T extends CombineLatest>(
         debugInfo,
         `combineLatest(${xs.join(',')})`,
       );
-      triggerEvent(RxEvent.ObservableCreator, chainedDebugInfo);
+      triggerDebugEvent(DebugEventName.ObservableCreator, chainedDebugInfo);
     } else {
-      triggerEvent(RxEvent.ObservableCreator, debugInfo);
+      triggerDebugEvent(DebugEventName.ObservableCreator, debugInfo);
     }
     return combineLatest.apply(this, args);
   }
@@ -107,7 +96,7 @@ export function register() {
           const debugInfo = getDebugInfo(this);
           const chainedDebugInfo = chainDebugInfo(debugInfo, 'pipe');
           attachDebugInfo(result, chainedDebugInfo);
-          triggerEvent(RxEvent.Pipe, chainedDebugInfo);
+          triggerDebugEvent(DebugEventName.Pipe, chainedDebugInfo);
           return result;
         };
       },
@@ -124,7 +113,7 @@ export function register() {
           const debugInfo = getDebugInfo(this);
           const chainedDebugInfo = chainDebugInfo(debugInfo, 'asObservable');
           attachDebugInfo(result, chainedDebugInfo);
-          triggerEvent(RxEvent.AsObservable, chainedDebugInfo);
+          triggerDebugEvent(DebugEventName.AsObservable, chainedDebugInfo);
           return result;
         };
       },
@@ -140,7 +129,7 @@ export function register() {
           const result = next.apply(this, args);
           const debugInfo = getDebugInfo(this);
           const chainedDebugInfo = chainDebugInfo(debugInfo, 'next');
-          triggerEvent(RxEvent.Next, chainedDebugInfo);
+          triggerDebugEvent(DebugEventName.Next, chainedDebugInfo);
           return result;
         };
       },
