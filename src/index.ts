@@ -9,11 +9,18 @@ __rxjsDebugRuntime.wrapSubject(TARGET, { label: LABEL })
 `);
 
 const buildWrapObservableCreator = template.expression(`
-__rxjsDebugRuntime.wrapObservableCreator(combineLatest, { label: LABEL })
+__rxjsDebugRuntime
+  .wrapObservableCreator(TARGET, { label: LABEL })(ARGS)
+  .pipe(
+    __rxjsDebugOperators.tap(
+      __rxjsDebugRuntime.wrapObservableCreatorPipe({ label: LABEL }),
+    ),
+  )
 `);
 
-const runtimeSnippet = template.statement(`
+const runtimeSnippets = template.statements(`
 const __rxjsDebugRuntime = require('babel-plugin-rxjs-debug/lib/runtime');
+const __rxjsDebugOperators = require('rxjs/operators');
 `)();
 
 class ChangeFlag {
@@ -117,9 +124,11 @@ const visitor: Visitor<State> = {
 
     const label = [...state.nameStack, observableCreatorName].join('.');
     const replaced = buildWrapObservableCreator({
+      TARGET: t.identifier(observableCreatorName),
       LABEL: t.stringLiteral(label),
+      ARGS: path.node.arguments,
     });
-    path.node.callee = replaced;
+    path.replaceInline(replaced);
     state.changeFlag.mark();
   },
 };
@@ -132,7 +141,7 @@ export default ({ types: t }: { types: typeof types }): PluginObj => ({
       path.traverse(visitor, { changeFlag, nameStack: [], types: t });
 
       if (changeFlag.changed) {
-        path.node.body.unshift(runtimeSnippet);
+        path.node.body = [...runtimeSnippets, ...path.node.body];
       }
     },
   },

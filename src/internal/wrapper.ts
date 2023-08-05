@@ -13,6 +13,13 @@ type CombineLatest = typeof combineLatest;
 
 const UNKNOWN_NAME = 'unknown';
 
+export function wrapObservableCreatorPipe(tracking: Tracking): () => void {
+  function wrapped() {
+    triggerDebugEvent(DebugEventName.ObservableCreatorPipe, tracking);
+  }
+  return wrapped;
+}
+
 export function wrapObservableCreator<T extends CombineLatest>(
   combineLatest: T,
   debugParams: DebugParams,

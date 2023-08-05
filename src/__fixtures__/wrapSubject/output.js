@@ -1,4 +1,5 @@
 const __rxjsDebugRuntime = require('babel-plugin-rxjs-debug/lib/runtime');
+const __rxjsDebugOperators = require('rxjs/operators');
 const subject = __rxjsDebugRuntime.wrapSubject(new Subject(), {
   label: 'subject',
 });

@@ -1,3 +1,7 @@
 import './internal/register';
 
-export { wrapSubject, wrapObservableCreator } from './internal/wrapper';
+export {
+  wrapSubject,
+  wrapObservableCreator,
+  wrapObservableCreatorPipe,
+} from './internal/wrapper';

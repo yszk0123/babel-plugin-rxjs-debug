@@ -5,6 +5,7 @@ export const DebugEventName = {
   Pipe: 'Pipe',
   AsObservable: 'AsObservable',
   ObservableCreator: 'ObservableCreator',
+  ObservableCreatorPipe: 'ObservableCreatorPipe',
 } as const;
 
 export type DebugEventName =
