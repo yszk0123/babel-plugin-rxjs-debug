@@ -21,7 +21,7 @@ export function wrapObservableCreator<T extends CombineLatest>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function wrapped(this: any, ...args: any) {
     if (Array.isArray(args) && args.length === 1 && Array.isArray(args[0])) {
-      const xs = args[0].map((v) => getTracking(v)?.name ?? UNKNOWN_NAME);
+      const xs = args[0].map((v) => getTracking(v)?.label ?? UNKNOWN_NAME);
       const chainedTracking = chainTracking(
         tracking,
         `combineLatest(${xs.join(',')})`,
@@ -45,9 +45,12 @@ export function wrapSubject<T = unknown>(
   return subject;
 }
 
-function chainTracking(tracking: Tracking | undefined, name: string): Tracking {
+function chainTracking(
+  tracking: Tracking | undefined,
+  label: string,
+): Tracking {
   const chainedTracking: Tracking = {
-    name: tracking?.name ? tracking.name + '.' + name : name,
+    label: tracking?.label ? tracking.label + '.' + label : label,
     id: tracking?.id ?? generateTrackingId(),
   };
   return chainedTracking;

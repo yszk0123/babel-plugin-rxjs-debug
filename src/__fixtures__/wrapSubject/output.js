@@ -1,20 +1,20 @@
 const __rxjsDebugRuntime = require('babel-plugin-rxjs-debug/lib/runtime');
 const subject = __rxjsDebugRuntime.wrapSubject(new Subject(), {
-  name: 'subject',
+  label: 'subject',
 });
 const behaviorSubject = __rxjsDebugRuntime.wrapSubject(new BehaviorSubject(), {
-  name: 'behaviorSubject',
+  label: 'behaviorSubject',
 });
 const nonSubject = new NonSubject();
 function foo() {
   const subject = __rxjsDebugRuntime.wrapSubject(new Subject(), {
-    name: 'foo.subject',
+    label: 'foo.subject',
   });
 }
 class Foo {
   bar() {
     const subject = __rxjsDebugRuntime.wrapSubject(new Subject(), {
-      name: 'Foo.bar.subject',
+      label: 'Foo.bar.subject',
     });
   }
 }

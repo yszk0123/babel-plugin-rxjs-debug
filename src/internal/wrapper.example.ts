@@ -2,9 +2,9 @@ import './register';
 import { Subject, combineLatest } from 'rxjs';
 import { wrapObservableCreator, wrapSubject } from './wrapper';
 
-const subject = wrapSubject(new Subject<number>(), { name: 'test' });
+const subject = wrapSubject(new Subject<number>(), { label: 'test' });
 
-wrapObservableCreator(combineLatest, { name: 'combine' })([
+wrapObservableCreator(combineLatest, { label: 'combine' })([
   subject.asObservable(),
 ]).subscribe({
   next(v) {

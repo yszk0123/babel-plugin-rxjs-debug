@@ -5,11 +5,11 @@ const SUBJECT_LIST = ['Subject', 'BehaviorSubject'];
 const OBSERVABLE_CREATOR_LIST = ['combineLatest', 'buffer'];
 
 const buildWrapSubject = template.expression(`
-__rxjsDebugRuntime.wrapSubject(TARGET, { name: NAME })
+__rxjsDebugRuntime.wrapSubject(TARGET, { label: LABEL })
 `);
 
 const buildWrapObservableCreator = template.expression(`
-__rxjsDebugRuntime.wrapObservableCreator(combineLatest, { name: NAME })
+__rxjsDebugRuntime.wrapObservableCreator(combineLatest, { label: LABEL })
 `);
 
 const runtimeSnippet = template.statement(`
@@ -67,10 +67,10 @@ const visitor: Visitor<State> = {
     }
     const target = path.node.init;
 
-    const combinedName = [...state.nameStack, variableName].join('.');
+    const label = [...state.nameStack, variableName].join('.');
     const replaced = buildWrapSubject({
       TARGET: target,
-      NAME: t.stringLiteral(combinedName),
+      LABEL: t.stringLiteral(label),
     });
     path.node.init = replaced;
     state.changeFlag.mark();
@@ -86,9 +86,9 @@ const visitor: Visitor<State> = {
       return;
     }
 
-    const combinedName = [...state.nameStack, observableCreatorName].join('.');
+    const label = [...state.nameStack, observableCreatorName].join('.');
     const replaced = buildWrapObservableCreator({
-      NAME: t.stringLiteral(combinedName),
+      LABEL: t.stringLiteral(label),
     });
     path.node.callee = replaced;
     state.changeFlag.mark();

@@ -8,10 +8,10 @@ export function generateTrackingId(): TrackingId {
 }
 
 export type Tracking = {
-  name: string;
+  label: string;
   id: TrackingId;
 };
-export type DebugParams = Pick<Tracking, 'name'>;
+export type DebugParams = Pick<Tracking, 'label'>;
 
 const DEBUG_INFO = Symbol('Tracking');
 
