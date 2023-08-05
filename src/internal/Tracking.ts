@@ -11,7 +11,7 @@ export type Tracking = {
   label: string;
   id: TrackingId;
 };
-export type DebugParams = Pick<Tracking, 'label'>;
+export type TrackingParams = Pick<Tracking, 'label'>;
 
 const DEBUG_INFO = Symbol('Tracking');
 
@@ -31,10 +31,10 @@ export function getTracking(fn: Function): Tracking | undefined {
   return (fn as any)[DEBUG_INFO] ?? undefined;
 }
 
-export function createTracking(debugParams: DebugParams): Tracking {
+export function createTracking(params: TrackingParams): Tracking {
   const trackingId = generateTrackingId();
   const tracking: Tracking = {
-    ...debugParams,
+    ...params,
     id: trackingId,
   };
   return tracking;

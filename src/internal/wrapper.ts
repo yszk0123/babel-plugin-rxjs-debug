@@ -1,7 +1,7 @@
 import { Observable, Subject, combineLatest } from 'rxjs';
 import { triggerDebugEvent, DebugEventName } from './DebugEvent';
 import {
-  DebugParams,
+  TrackingParams,
   createTracking,
   getTracking,
   attachTracking,
@@ -22,9 +22,9 @@ export function wrapObservableCreatorPipe(tracking: Tracking): () => void {
 
 export function wrapObservableCreator<T extends CombineLatest>(
   combineLatest: T,
-  debugParams: DebugParams,
+  params: TrackingParams,
 ): T {
-  const tracking = createTracking(debugParams);
+  const tracking = createTracking(params);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function wrapped(this: any, ...args: any) {
     if (Array.isArray(args) && args.length === 1 && Array.isArray(args[0])) {
@@ -45,9 +45,9 @@ export function wrapObservableCreator<T extends CombineLatest>(
 
 export function wrapSubject<T = unknown>(
   subject: Subject<T>,
-  debugParams: DebugParams,
+  params: TrackingParams,
 ): Subject<T> {
-  const tracking = createTracking(debugParams);
+  const tracking = createTracking(params);
   attachTracking(subject, tracking);
   return subject;
 }
