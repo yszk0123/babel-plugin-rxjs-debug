@@ -1,41 +1,19 @@
 import { Observable, Subject, combineLatest } from 'rxjs';
 import { triggerDebugEvent, DebugEventName } from './DebugEvent';
 import { generateTrackingId } from './generateTrackingId';
+import {
+  DebugParams,
+  createDebugInfo,
+  getDebugInfo,
+  attachDebugInfo,
+  DebugInfo,
+} from './DebugInfo';
 
-type TrackingId = string;
-
-export type DebugInfo = {
-  name: string;
-  trackingId: TrackingId;
-};
-type DebugParams = Pick<DebugInfo, 'name'>;
+export type TrackingId = string;
 
 type CombineLatest = typeof combineLatest;
 
-const DEBUG_INFO = Symbol('DebugInfo');
-
 const UNKNOWN_NAME = 'unknown';
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-function attachDebugInfo(o: Function | object, debugInfo: DebugInfo): void {
-  if (!Object.hasOwn(o, DEBUG_INFO)) {
-    Object.assign(o, { [DEBUG_INFO]: debugInfo });
-  }
-}
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-function getDebugInfo(fn: Function): DebugInfo | undefined {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (fn as any)[DEBUG_INFO] ?? undefined;
-}
-
-function createDebugInfo(debugParams: DebugParams): DebugInfo {
-  const debugInfo: DebugInfo = {
-    ...debugParams,
-    trackingId: generateTrackingId(),
-  };
-  return debugInfo;
-}
 
 export function wrapObservableCreator<T extends CombineLatest>(
   combineLatest: T,

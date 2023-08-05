@@ -1,4 +1,4 @@
-import { DebugInfo } from './wrapper';
+import { DebugInfo } from './DebugInfo';
 
 export const DebugEventName = {
   Next: 'Next',
