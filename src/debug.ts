@@ -1,4 +1,4 @@
-export { DebugInfo } from './internal/DebugInfo';
+export { Tracking } from './internal/Tracking';
 export {
   DebugEventName,
   DebugEvent,

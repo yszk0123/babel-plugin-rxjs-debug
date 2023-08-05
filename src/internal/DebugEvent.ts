@@ -1,4 +1,4 @@
-import { DebugInfo } from './DebugInfo';
+import { Tracking } from './Tracking';
 
 export const DebugEventName = {
   Next: 'Next',
@@ -12,7 +12,7 @@ export type DebugEventName =
 
 export type DebugEvent = {
   name: DebugEventName;
-  debugInfo: DebugInfo | undefined;
+  tracking: Tracking | undefined;
 };
 
 export type DebugEventListener = (event: DebugEvent) => void;
@@ -36,11 +36,11 @@ export function addDebugEventListener(
 
 export function triggerDebugEvent(
   name: DebugEventName,
-  debugInfo: DebugInfo | undefined,
+  tracking: Tracking | undefined,
 ): void {
   const event: DebugEvent = {
     name,
-    debugInfo,
+    tracking,
   };
   for (const listener of listeners) {
     listener(event);
