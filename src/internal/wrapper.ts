@@ -1,5 +1,6 @@
 import { Observable, Subject, combineLatest } from 'rxjs';
 import { triggerDebugEvent, DebugEventName } from './DebugEvent';
+import { generateTrackingId } from './generateTrackingId';
 
 type TrackingId = string;
 
@@ -10,12 +11,6 @@ export type DebugInfo = {
 type DebugParams = Pick<DebugInfo, 'name'>;
 
 type CombineLatest = typeof combineLatest;
-
-let count = 0;
-export function generateTrackingId(): string {
-  count += 1;
-  return 'tr-' + count;
-}
 
 const DEBUG_INFO = Symbol('DebugInfo');
 
